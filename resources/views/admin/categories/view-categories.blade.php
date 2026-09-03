@@ -76,7 +76,7 @@
                                             </tr>
                                         </thead>
                                         <tbody id="categoriesTableBody">
-                                            @foreach ($categories as $category)
+                                            @forelse ($categories as $category)
                                                 <tr data-category-row data-section-id="{{ $category->menu_section_id }}">
                                                     <td>
                                                         <div class="d-flex flex-column gap-1">
@@ -114,10 +114,30 @@
                                                     <td><span class="badge bg-success"
                                                             data-status>{{ $category->status }}</span></td>
                                                 </tr>
-                                            @endforeach
+                                            @empty
+                                                <tr>
+                                                    <td colspan="6" class="text-center text-muted">No categories found</td>
+                                                </tr>
+                                            @endforelse
                                         </tbody>
 
                                     </table>
+                                </div>
+
+                                {{-- Pagination --}}
+                                <style>
+                                    .pagination {
+                                        margin: 0;
+                                        gap: 0.25rem;
+                                    }
+                                    .pagination .page-link {
+                                        padding: 0.35rem 0.6rem;
+                                        font-size: 0.875rem;
+                                        line-height: 1.25;
+                                    }
+                                </style>
+                                <div class="d-flex justify-content-end mt-3">
+                                    {{ $categories->links() }}
                                 </div>
                             </div>
                         </div>

@@ -25,6 +25,12 @@
             cursor: pointer;
             user-select: none;
             transition: transform .05s ease-in-out, box-shadow .2s ease-in-out, border-color .2s ease-in-out;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
 
         .table-card:hover {
@@ -79,12 +85,18 @@
         .mono {
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         }
+
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+        }
     </style>
 </head>
 
 <body>
 
-<div class="container-fluid px-4 py-3">
+    <div class="container-fluid px-4 py-3">
         <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
             <div class="d-flex align-items-center gap-2">
                 <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center"
@@ -152,9 +164,18 @@
                 <i class="bi bi-calendar-event me-1"></i> View Reservations
             </button>
         </div>
-        </div>
+    </div>
 
-@include('components.session-messages')
+    @include('components.session-messages')
+
+    <form id="orderForm" action="{{ route('orders.store') }}" method="POST" style="display:none;">
+        @csrf
+        <input type="hidden" id="orderFormCustomerName" name="customer_name" value="" />
+        <input type="hidden" id="orderFormCustomerPhone" name="phone" value="" />
+        <input type="hidden" id="orderFormGuestCount" name="guest_count" value="1" />
+        <input type="hidden" id="orderFormTableId" name="table_id" value="" />
+        <input type="hidden" id="orderFormOrderItems" name="order_items" value="" />
+    </form>
 
     <div class="container py-4">
         <div id="tablesSection"></div>
@@ -175,7 +196,26 @@
                     </div>
 
                     <div class="rm-panel-body">
-                        <div id="tablesGrid" class="row g-2"></div>
+                        <div id="tablesGrid" class="tables-grid">
+                            @foreach ($tables as $table)
+                                <div class="table-card p-2 border rounded-3">
+                                    <div class="fw-bold mb-2">{{ $table->table_number }}</div>
+                                    <div>
+                                        @if ($table->status === 'available')
+                                            <span class="badge rounded-pill text-bg-success badge-soft"
+                                                title="Available"><i class="bi bi-check2-circle me-1"></i>
+                                                Available</span>
+                                        @elseif ($table->status === 'reserved')
+                                            <span class="badge rounded-pill text-bg-primary badge-soft"
+                                                title="Reserved"><i class="bi bi-clock me-1"></i> Reserved</span>
+                                        @else
+                                            <span class="badge rounded-pill text-bg-warning text-dark badge-soft"
+                                                title="Occupied"><i class="bi bi-fire me-1"></i> Occupied</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                         <hr />
                         <div class="d-grid gap-2">
                             <button id="btnMarkAvailable" class="btn btn-outline-success">
@@ -200,10 +240,10 @@
                             <div class="rm-panel-head d-flex align-items-start justify-content-between gap-3">
                                 <div>
                                     <div class="section-title fw-bold fs-5">Create Order</div>
-                                    <div class="small-muted small">Choose table, add items, then create order.</div>
+                                    <div class="small-muted small">Choose table, browse items, then place the order.
+                                    </div>
                                 </div>
                                 <div class="text-end">
-                                    <div class="small-muted small">Table status updates automatically.</div>
                                     <div class="fw-bold mono" style="font-size:1.05rem;">Total: <span
                                             id="orderTotal">0.00</span></div>
                                 </div>
@@ -211,46 +251,148 @@
 
                             <div class="rm-panel-body">
                                 <div class="row g-3">
-                                    <div class="col-12 col-md-4">
-                                        <label class="form-label fw-semibold">Table</label>
-                                        <select id="orderTableSelect" class="form-select"
-                                            aria-label="Select table"></select>
-                                    </div>
+                                    <div class="col-12 col-xl-4">
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <label class="form-label fw-semibold">Table</label>
+                                                <select id="orderTableSelect" class="form-select"
+                                                    aria-label="Select table for order">
+                                                    @foreach ($tables as $table)
+                                                        @if ($table->status !== 'occupied')
+                                                            <option value="{{ $table->id }}">
+                                                                {{ $table->table_number }}
+                                                                ({{ ucfirst($table->status) }})
+                                                            </option>
+                                                        @endif
+                                                    @endforeach
+                                                </select>
+                                            </div>
 
-                                    <div class="col-12 col-md-4">
-                                        <label class="form-label fw-semibold">Menu Item</label>
-                                        <select id="menuItemSelect" class="form-select"
-                                            aria-label="Select menu item"></select>
-                                        <div class="small-muted small mt-1">
-                                            Price: <span id="menuItemPrice" class="mono">0.00</span>
+                                            <div class="col-12">
+                                                <label class="form-label fw-semibold">Customer Name</label>
+                                                <input id="orderCustomerName" class="form-control" type="text"
+                                                    placeholder="e.g. Ahmed" />
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="form-label fw-semibold">Phone</label>
+                                                <input id="orderCustomerPhone" class="form-control" type="tel"
+                                                    placeholder="e.g. 010xxxxxxx" maxlength="10" />
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="form-label fw-semibold">Number of Guests</label>
+                                                <input id="orderGuestCount" class="form-control" type="number"
+                                                    min="1" step="1" value="2" />
+                                            </div>
+
+                                            <div class="col-12">
+                                                <div class="card border-light shadow-sm">
+                                                    <div class="card-header py-2">Sections</div>
+                                                    <div class="list-group list-group-flush" id="sectionsList"></div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <div class="card border-light shadow-sm">
+                                                    <div class="card-header py-2">Categories</div>
+                                                    <div class="list-group list-group-flush" id="categoriesList">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <div class="card border-light shadow-sm">
+                                                    <div class="card-header py-2">Subcategories</div>
+                                                    <div class="list-group list-group-flush" id="subcategoriesList">
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div class="col-12 col-md-4">
-                                        <label class="form-label fw-semibold">Quantity</label>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <button id="qtyMinus" class="btn btn-outline-secondary"
-                                                type="button"><i class="bi bi-dash"></i></button>
-                                            <input id="qtyInput" class="form-control text-center qty-pill mono"
-                                                type="number" value="1" min="1" step="1" />
-                                            <button id="qtyPlus" class="btn btn-outline-secondary"
-                                                type="button"><i class="bi bi-plus"></i></button>
+                                    <div class="col-12 col-xl-8">
+                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                            <div>
+                                                <div class="fw-semibold">Menu Items</div>
+                                                <div class="small-muted small">Browse items by section and category.
+                                                </div>
+                                            </div>
+                                            <div class="small-muted small">Showing <span id="itemsCount">0</span>
+                                            </div>
                                         </div>
-                                        <div class="small-muted small mt-1">Line total: <span id="lineTotal"
-                                                class="mono">0.00</span></div>
+                                        <div id="itemsGrid" class="row g-3"></div>
                                     </div>
 
-                                    <div class="col-12">
-                                        <div class="d-flex gap-2 flex-wrap">
-                                            <button id="btnAddItem" class="btn btn-primary">
-                                                <i class="bi bi-plus-circle me-1"></i> Add to Order
-                                            </button>
-                                            <button id="btnClearDraft" class="btn btn-outline-danger">
-                                                <i class="bi bi-trash me-1"></i> Clear Draft
-                                            </button>
-                                            <button id="btnCreateOrder" class="btn btn-success">
-                                                <i class="bi bi-receipt-cutoff me-1"></i> Create Order
-                                            </button>
+                                    <div class="modal fade" id="itemModal" tabindex="-1"
+                                        aria-labelledby="itemModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <div>
+                                                        <h5 class="modal-title" id="itemModalLabel">Menu item</h5>
+                                                        <div class="small-muted small" id="itemModalBadge"></div>
+                                                    </div>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                        aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="row g-3">
+                                                        <div class="col-12 col-md-5">
+                                                            <img id="itemModalImage" src="" alt="Item image"
+                                                                class="img-fluid rounded"
+                                                                style="width:100%; height:220px; object-fit:cover;" />
+                                                        </div>
+                                                        <div class="col-12 col-md-7">
+                                                            <div class="mb-2">
+                                                                <div class="fw-semibold fs-5" id="itemModalName">Item
+                                                                    name</div>
+                                                                <div class="small-muted" id="itemModalAvailability">
+                                                                </div>
+                                                            </div>
+                                                            <div
+                                                                class="d-flex align-items-center justify-content-between mb-3">
+                                                                <div class="mono fw-semibold fs-4"
+                                                                    id="itemModalPrice">0.00</div>
+                                                                <div class="small-muted" id="itemModalPrepTime"></div>
+                                                            </div>
+                                                            <div class="small text-muted mb-3"
+                                                                id="itemModalDescription"></div>
+                                                            <div class="row g-2 mb-3">
+                                                                <div class="col-12 col-sm-6">
+                                                                    <label
+                                                                        class="form-label fw-semibold">Quantity</label>
+                                                                    <div class="input-group input-group-sm">
+                                                                        <button class="btn btn-outline-secondary"
+                                                                            type="button" id="itemModalQtyMinus"><i
+                                                                                class="bi bi-dash"></i></button>
+                                                                        <input id="itemModalQty" type="number"
+                                                                            class="form-control text-center"
+                                                                            value="1" min="1"
+                                                                            step="1" />
+                                                                        <button class="btn btn-outline-secondary"
+                                                                            type="button" id="itemModalQtyPlus"><i
+                                                                                class="bi bi-plus"></i></button>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12 col-sm-6">
+                                                                    <label class="form-label fw-semibold">Special
+                                                                        Instructions</label>
+                                                                    <textarea id="itemModalInstructions" class="form-control" rows="3" placeholder="Add notes for kitchen..."></textarea>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary"
+                                                        data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="button" class="btn btn-primary"
+                                                        id="itemModalAddButton">
+                                                        <i class="bi bi-plus-circle me-1"></i> Add to Order
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -260,14 +402,15 @@
                                         <div class="rm-panel" style="border-style:dashed;">
                                             <div class="rm-panel-body">
                                                 <div id="draftItemsEmpty" class="small-muted small">No items yet. Add
-                                                    from the menu above.</div>
+                                                    from the menu below.</div>
                                                 <div id="draftItemsList" class="mt-2"></div>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="col-12 col-lg-5">
-                                        <div class="fw-semibold mb-2"><i class="bi bi-credit-card me-1"></i> Summary
+                                        <div class="fw-semibold mb-2"><i class="bi bi-credit-card me-1"></i> Order
+                                            Summary
                                         </div>
                                         <div class="rm-panel" style="border-style:dashed;">
                                             <div class="rm-panel-body">
@@ -276,47 +419,40 @@
                                                     <div class="mono fw-semibold" id="orderSubtotal">0.00</div>
                                                 </div>
                                                 <div class="d-flex justify-content-between mt-2">
+                                                    <div class="small-muted">Discount</div>
+                                                    <div class="mono fw-semibold text-success" id="orderDiscount">0.00
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex justify-content-between mt-2">
                                                     <div class="small-muted">Tax (0%)</div>
-                                                    <div class="mono fw-semibold">0.00</div>
+                                                    <div class="mono fw-semibold" id="orderTax">0.00</div>
                                                 </div>
                                                 <hr />
                                                 <div class="d-flex justify-content-between align-items-end">
                                                     <div>
-                                                        <div class="small-muted small">Total</div>
+                                                        <div class="small-muted small">Grand Total</div>
                                                         <div class="fw-bold mono" style="font-size:1.25rem;"
                                                             id="orderTotalBig">0.00</div>
                                                     </div>
-                                                    <div class="text-end small-muted">
-                                                        <i class="bi bi-info-circle"></i>
-                                                        <div class="small">Draft only changes lists when you create
-                                                            the order.</div>
-                                                    </div>
                                                 </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="mt-3 alert alert-info mb-0" role="alert">
-                                            <div class="d-flex gap-2 align-items-start">
-                                                <i class="bi bi-lightning-charge"></i>
-                                                <div>
-                                                    <div class="fw-semibold">Tip</div>
-                                                    <div class="small">
-                                                        Tables become <span
-                                                            class="badge text-bg-warning">Occupied</span> after
-                                                        creating an order. Reservations mark tables as <span
-                                                            class="badge text-bg-primary">Reserved</span>.
-                                                    </div>
+                                                <div class="d-grid gap-2 mt-4">
+                                                    <button id="btnCreateOrder" class="btn btn-success">
+                                                        <i class="bi bi-receipt-cutoff me-1"></i> Create Order
+                                                    </button>
+                                                    <button id="btnClearDraft" class="btn btn-outline-danger">
+                                                        <i class="bi bi-trash me-1"></i> Clear Draft
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- RESERVATIONS + LISTS -->
+
                     <div class="col-12">
                         <div id="reservationsSection"></div>
                         <div class="row g-3">
@@ -329,54 +465,105 @@
                                         <div class="small-muted small">Create a reservation to reserve a table.</div>
                                     </div>
                                     <div class="rm-panel-body">
-
-                                        <div class="row g-3">
-                                            <div class="col-12">
-                                                <label class="form-label fw-semibold">Table</label>
-                                                <select id="reservationTableSelect" class="form-select"
-                                                    aria-label="Select table for reservation"></select>
+                                        <form action="{{ route('reservations.store') }}" method="POST">
+                                            @csrf
+                                            <div class="row g-3">
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold">Reservation Type</label>
+                                                    <select id="reservation_type" name="reservation_type"
+                                                        class="form-select">
+                                                        <option value="now">Order Now (Immediate)</option>
+                                                        <option value="scheduled" selected>Schedule for Date & Time
+                                                        </option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold">Customer Name</label>
+                                                    <input id="customer_name" name="customer_name"
+                                                        class="form-control" type="text"
+                                                        placeholder="e.g. Ahmed" />
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold">Phone</label>
+                                                    <input id="phone" name="phone" class="form-control"
+                                                        type="tel" placeholder="e.g. 010xxxxxxx" maxlength="10"
+                                                        minlength="10" />
+                                                </div>
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label fw-semibold">Number of Guests</label>
+                                                    <input id="guest_count" name="guest_count" class="form-control"
+                                                        type="number" min="1" step="1"
+                                                        value="2" />
+                                                </div>
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label fw-semibold">Table Type</label>
+                                                    <select id="table_type" name="table_type" class="form-select">
+                                                        <option value="">Any</option>
+                                                        <option value="private">Private</option>
+                                                        <option value="public">Public</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold">Table</label>
+                                                    <select id="table_id" name="table_id" class="form-select"
+                                                        aria-label="Select table for reservation">
+                                                        <option value="">Auto Assign</option>
+                                                        @foreach ($tables as $table)
+                                                            @if ($table->status === 'available')
+                                                                <option value="{{ $table->id }}">
+                                                                    {{ $table->table_number }}
+                                                                    ({{ ucfirst($table->type) }})
+                                                                </option>
+                                                            @endif
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div id="scheduledFields" class="row g-3 mt-0">
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label fw-semibold">Reservation Date</label>
+                                                        <input id="reservation_date" name="reservation_date"
+                                                            class="form-control" type="date" />
+                                                    </div>
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label fw-semibold">Reservation Time</label>
+                                                        <input id="reservation_time" name="reservation_time"
+                                                            class="form-control" type="time" />
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label fw-semibold">Estimated
+                                                            Duration</label>
+                                                        <select id="duration_hours" name="duration_hours"
+                                                            class="form-select">
+                                                            <option value="1">1 hour</option>
+                                                            <option value="1.5">1.5 hours</option>
+                                                            <option value="2" selected>2 hours</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold">Special Occasion</label>
+                                                    <select id="special_occasion" name="special_occasion"
+                                                        class="form-select">
+                                                        <option value="None">None</option>
+                                                        <option value="Birthday">Birthday</option>
+                                                        <option value="Anniversary">Anniversary</option>
+                                                        <option value="Business">Business</option>
+                                                        <option value="Other">Other</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold">Additional Notes
+                                                        (optional)</label>
+                                                    <textarea id="notes" name="notes" class="form-control" rows="2" placeholder="Any special requests..."></textarea>
+                                                </div>
+                                                <div class="col-12">
+                                                    <button id="btnCreateReservation" class="btn btn-primary w-100"
+                                                        type="submit">
+                                                        <i class="bi bi-person-plus me-1"></i> Create Reservation
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div class="col-12">
-                                                <label class="form-label fw-semibold">Customer Name</label>
-                                                <input id="resName" class="form-control" type="text"
-                                                    placeholder="e.g. Ahmed" />
-                                            </div>
-                                            <div class="col-12">
-                                                <label class="form-label fw-semibold">Phone</label>
-                                                <input id="resPhone" class="form-control" type="tel"
-                                                    placeholder="e.g. 010xxxxxxx" />
-                                            </div>
-                                            <div class="col-12 col-md-6">
-                                                <label class="form-label fw-semibold">Date</label>
-                                                <input id="resDate" class="form-control" type="date" />
-                                            </div>
-                                            <div class="col-12 col-md-6">
-                                                <label class="form-label fw-semibold">Time</label>
-                                                <input id="resTime" class="form-control" type="time" />
-                                            </div>
-                                            <div class="col-12 col-md-6">
-                                                <label class="form-label fw-semibold">Party Size</label>
-                                                <input id="resPartySize" class="form-control" type="number"
-                                                    min="1" step="1" value="2" />
-                                            </div>
-                                            <div class="col-12 col-md-6">
-                                                <label class="form-label fw-semibold">Status</label>
-                                                <select id="resStatus" class="form-select">
-                                                    <option value="Reserved" selected>Reserved</option>
-                                                    <option value="Arriving">Arriving</option>
-                                                    <option value="Seated">Seated</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-12">
-                                                <label class="form-label fw-semibold">Notes (optional)</label>
-                                                <textarea id="resNotes" class="form-control" rows="2" placeholder="Any special requests..."></textarea>
-                                            </div>
-                                            <div class="col-12">
-                                                <button id="btnCreateReservation" class="btn btn-primary w-100">
-                                                    <i class="bi bi-person-plus me-1"></i> Create Reservation
-                                                </button>
-                                            </div>
-                                        </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -387,12 +574,6 @@
                                         <div>
                                             <div class="fw-bold fs-5"><i class="bi bi-kanban me-1"></i> Active Orders
                                                 & Reservations</div>
-                    <div class="small-muted small">UI-only demo state (no backend yet).</div>
-                                        </div>
-                                        <div class="text-end">
-                                            <button id="btnClearAll" class="btn btn-outline-danger btn-sm">
-                                                <i class="bi bi-x-circle me-1"></i> Reset Demo
-                                            </button>
                                         </div>
                                     </div>
                                     <div class="rm-panel-body">
@@ -411,9 +592,42 @@
                                                 <hr />
                                                 <div class="fw-semibold mb-2"><i class="bi bi-calendar me-1"></i>
                                                     Reservations</div>
-                                                <div id="reservationsList"></div>
-                                                <div id="reservationsEmpty" class="small-muted small"
-                                                    style="display:none;">No reservations yet.</div>
+                                                <div id="reservationsList">
+                                                    @forelse ($reservations as $reservation)
+                                                        <div class="list-row">
+                                                            <div
+                                                                class="d-flex align-items-start justify-content-between gap-3">
+                                                                <div>
+                                                                    <div class="fw-semibold">
+                                                                        {{ $reservation->reservation_number }} —
+                                                                        {{ $reservation->customer_name }}</div>
+                                                                    <div class="small-muted small">
+                                                                        <span
+                                                                            class="badge text-bg-primary">{{ ucfirst($reservation->status) }}</span>
+                                                                        • {{ $reservation->guest_count }} guest(s)
+                                                                        •
+                                                                        {{ $reservation->table?->table_number ?? 'Auto assign' }}
+                                                                    </div>
+                                                                    <div class="small-muted small mt-1">
+                                                                        {{ $reservation->reservation_date ? $reservation->reservation_date->format('M d, Y') : 'Immediate' }}
+                                                                        {{ $reservation->reservation_time ? 'at ' . $reservation->reservation_time : '' }}
+                                                                    </div>
+                                                                    @if ($reservation->notes)
+                                                                        <div class="small-muted small mt-1">
+                                                                            {{ $reservation->notes }}</div>
+                                                                    @endif
+                                                                </div>
+                                                                <div class="text-end">
+                                                                    <div class="mono fw-semibold">
+                                                                        {{ $reservation->phone }}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @empty
+                                                        <div id="reservationsEmpty" class="small-muted small">No
+                                                            reservations yet.</div>
+                                                    @endforelse
+                                                </div>
                                             </div>
                                         </div>
 
@@ -434,70 +648,111 @@
         const scrollToId = (id) => {
             const el = document.getElementById(id);
             if (!el) return;
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            el.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
         };
 
-        // ---------- Demo data (menu) ----------
+        const normalizeStatus = (status) => {
+            const value = String(status || 'available').toLowerCase();
+            if (value === 'reserved') return 'Reserved';
+            if (value === 'occupied') return 'Occupied';
+            return 'Available';
+        };
 
+        @php
+            $menuSectionsJson = [];
+            foreach ($sections as $section) {
+                $sectionData = [
+                    'id' => $section->id,
+                    'name' => $section->name,
+                    'categories' => [],
+                ];
 
-        const MENU_ITEMS = [{
-                id: 1,
-                name: 'Chicken Shawarma',
-                price: 80.00
-            },
-            {
-                id: 2,
-                name: 'Beef Burger',
-                price: 120.00
-            },
-            {
-                id: 3,
-                name: 'Caesar Salad',
-                price: 90.00
-            },
-            {
-                id: 4,
-                name: 'Margherita Pizza',
-                price: 160.00
-            },
-            {
-                id: 5,
-                name: 'Pasta Alfredo',
-                price: 140.00
-            },
-            {
-                id: 6,
-                name: 'Fresh Juice',
-                price: 60.00
-            },
-            {
-                id: 7,
-                name: 'Chocolate Cake',
-                price: 110.00
-            },
-            {
-                id: 8,
-                name: 'Espresso',
-                price: 50.00
+                foreach ($section->menuCategories as $category) {
+                    $categoryData = [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'subcategories' => [],
+                    ];
+
+                    foreach ($category->menuSubcategories as $subcategory) {
+                        $categoryData['subcategories'][] = [
+                            'id' => $subcategory->id,
+                            'name' => $subcategory->name,
+                        ];
+                    }
+
+                    $sectionData['categories'][] = $categoryData;
+                }
+
+                $menuSectionsJson[] = $sectionData;
             }
-        ];
 
-        // ---------- Demo state ----------
-        // status: Available | Reserved | Occupied
-        const currentWaiterId = 1; // UI-only demo: pretend logged-in waiter #1
+            $menuItemsJson = [];
+            foreach ($menuItems as $item) {
+                $activeOffer = $item->getActiveOffers()->first();
+                $offerPrice = null;
+                $offerLabel = null;
+
+                if ($activeOffer && isset($activeOffer->pivot->discounted_price)) {
+                    $offerPrice = (float) $activeOffer->pivot->discounted_price;
+                    $offerLabel = $activeOffer->name;
+                }
+
+                $menuItemsJson[] = [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'description' => $item->description,
+                    'price' => (float) $item->price,
+                    'regular_price' => (float) $item->price,
+                    'offer_price' => $offerPrice,
+                    'offer_label' => $offerLabel,
+                    'image' => $item->image,
+                    'status' => $item->status,
+                    'menu_subcategory_id' => $item->menu_subcategory_id,
+                    'menu_category_id' => $item->menuSubcategory?->menu_category_id,
+                    'menu_section_id' => $item->menuSubcategory?->menuCategory?->menu_section_id,
+                    'preparation_time' => $item->preparation_time,
+                ];
+            }
+
+            $initialTablesJson = [];
+            foreach ($tables as $table) {
+                $initialTablesJson[] = [
+                    'id' => $table->id,
+                    'name' => $table->table_number,
+                    'status' => $table->status,
+                    'lockedUntil' => null,
+                ];
+            }
+        @endphp
+
+        const MENU_SECTIONS = @json($menuSectionsJson);
+        const MENU_ITEMS = @json($menuItemsJson);
+        const initialTables = @json($initialTablesJson);
+
+        const normalizedTables = initialTables.map((table) => ({
+            ...table,
+            status: normalizeStatus(table.status),
+        }));
+
+        const currentWaiterId = 1;
 
         const state = {
-            tables: new Array(12).fill(0).map((_, i) => ({
-                id: i + 1,
-                name: 'Table ' + (i + 1),
-                status: 'Available',
-                lockedUntil: null
-            })),
+            tables: normalizedTables,
             selectedTableId: null,
-            draftItems: [], // { menuItemId, name, price, qty }
+            selectedSectionId: null,
+            selectedCategoryId: null,
+            selectedSubcategoryId: null,
+            activeMenuItemId: null,
+            draftItems: [], // { menuItemId, name, qty, unitPrice, regularPrice, offerPrice, specialInstructions }
             orders: [], // { id, tableId, items[], total, createdAt, status }
             reservations: [] // { id, tableId, name, phone, date, time, partySize, notes, status }
         };
+
+        let itemModal;
 
         // ---------- Helpers ----------
         const money = (n) => (Number(n) || 0).toFixed(2);
@@ -523,28 +778,24 @@
                 const disabled = t.status !== 'Available' && t.status !== 'Reserved';
 
                 const col = document.createElement('div');
-                col.className = 'col-6 col-sm-4 col-md-3 col-lg-4';
-
                 col.innerHTML = `
                     <div class="table-card p-2 border rounded-3 ${isActive ? 'active' : ''} ${disabled ? 'opacity-50' : ''}"
                          role="button"
                          data-table-id="${t.id}"
                          style="background:#fff;"
                          ${disabled ? 'aria-disabled="true"' : ''}>
-                        <div class="d-flex align-items-center justify-content-between gap-2">
-                            <div class="fw-bold">${t.name}</div>
-                        </div>
-                        <div class="mt-1">${tableBadge(t.status)}</div>
+                        <div class="fw-bold mb-2">${t.name}</div>
+                        <div>${tableBadge(t.status)}</div>
                     </div>
                 `;
 
-                grid.appendChild(col);
+                grid.appendChild(col.firstElementChild);
             });
         };
 
         const renderTableSelects = () => {
             const orderSel = document.getElementById('orderTableSelect');
-            const resSel = document.getElementById('reservationTableSelect');
+            const resSel = document.getElementById('table_id');
             const opts = state.tables.map(t => {
                 const disabled = t.status === 'Occupied';
                 const attr = disabled ? 'disabled' : '';
@@ -552,7 +803,9 @@
             }).join('');
 
             orderSel.innerHTML = opts;
-            resSel.innerHTML = opts;
+            if (resSel) {
+                resSel.innerHTML = `<option value="">Auto Assign</option>${opts}`;
+            }
 
             if (!state.selectedTableId) {
                 const firstAvail = state.tables.find(t => t.status !== 'Occupied');
@@ -565,7 +818,19 @@
         };
 
         const computeDraftTotal = () => {
-            return state.draftItems.reduce((sum, it) => sum + (Number(it.price) * Number(it.qty)), 0);
+            return state.draftItems.reduce((sum, it) => sum + (Number(it.unitPrice) * Number(it.qty)), 0);
+        };
+
+        const computeDraftDiscount = () => {
+            return state.draftItems.reduce((sum, it) => {
+                const regular = Number(it.regularPrice) || Number(it.unitPrice);
+                const discount = Math.max(0, regular - Number(it.unitPrice));
+                return sum + (discount * Number(it.qty));
+            }, 0);
+        };
+
+        const computeTax = (amount) => {
+            return 0;
         };
 
         const renderDraftItems = () => {
@@ -580,14 +845,14 @@
             empty.style.display = 'none';
 
             state.draftItems.forEach((it, idx) => {
-                const lineTotal = money(it.price * it.qty);
+                const lineTotal = money(it.unitPrice * it.qty);
 
                 const row = document.createElement('div');
                 row.className = 'list-row d-flex align-items-start justify-content-between gap-3';
                 row.innerHTML = `
                     <div>
                         <div class="fw-semibold">${it.name}</div>
-                        <div class="small-muted small">${money(it.price)} × ${it.qty}</div>
+                        <div class="small-muted small">${money(it.unitPrice)} × ${it.qty}${it.specialInstructions ? ` • ${it.specialInstructions}` : ''}</div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <div class="mono fw-semibold">${lineTotal}</div>
@@ -603,19 +868,24 @@
 
         const renderSummary = () => {
             const subtotal = computeDraftTotal();
+            const discount = computeDraftDiscount();
+            const tax = computeTax(subtotal - discount);
+            const total = subtotal - discount + tax;
+
             document.getElementById('orderSubtotal').textContent = money(subtotal);
-            document.getElementById('orderTotal').textContent = money(subtotal);
-            document.getElementById('orderTotalBig').textContent = money(subtotal);
+            document.getElementById('orderDiscount').textContent = `-${money(discount)}`;
+            document.getElementById('orderTax').textContent = money(tax);
+            document.getElementById('orderTotal').textContent = money(total);
+            document.getElementById('orderTotalBig').textContent = money(total);
         };
 
         const renderOrdersAndReservations = () => {
             const ordersWrap = document.getElementById('ordersList');
             const ordersEmpty = document.getElementById('ordersEmpty');
 
-            const resEmpty = document.getElementById('reservationsEmpty');
-
             ordersWrap.innerHTML = '';
-            resWrap.innerHTML = '';
+
+            const myActiveOrders = state.orders.filter(o => o.waiterId === currentWaiterId && o.status === 'Active');
 
             if (!myActiveOrders.length) {
                 ordersEmpty.style.display = 'block';
@@ -623,19 +893,11 @@
                 ordersEmpty.style.display = 'none';
             }
 
-            if (!state.reservations.length) {
-                resEmpty.style.display = 'block';
-            } else {
-                resEmpty.style.display = 'none';
-            }
-
             const fmtDate = (d, t) => {
                 const date = d || '';
                 const time = t || '';
                 return [date, time].filter(Boolean).join(' ');
             };
-
-            const myActiveOrders = state.orders.filter(o => o.waiterId === currentWaiterId && o.status === 'Active');
 
             myActiveOrders.forEach((o) => {
                 const t = findTable(o.tableId);
@@ -665,7 +927,7 @@
                 ordersWrap.appendChild(div);
             });
 
-            myActiveReservations.forEach((r) => {
+            state.reservations.forEach((r) => {
                 const t = findTable(r.tableId);
                 const statusBadge = r.status === 'Reserved' ?
                     `<span class="badge text-bg-primary">Reserved</span>` :
@@ -692,54 +954,217 @@
                         </div>
                     </div>
                 `;
-                resWrap.appendChild(div);
+                ordersWrap.appendChild(div);
             });
         };
 
-        const renderMenuItemSelect = () => {
-            const menuSel = document.getElementById('menuItemSelect');
-            menuSel.innerHTML = MENU_ITEMS.map(mi => `<option value="${mi.id}">${mi.name}</option>`).join('');
-            const first = MENU_ITEMS[0];
-            if (first) {
-                menuSel.value = first.id;
-                document.getElementById('menuItemPrice').textContent = money(first.price);
+        const itemImageUrl = (path) => {
+            if (!path) return '';
+            if (String(path).startsWith('http')) return path;
+            return '/storage/' + String(path).replace(/^public\//, '');
+        };
+
+        const getCurrentItems = () => {
+            if (state.selectedSubcategoryId) {
+                return MENU_ITEMS.filter(item => item.menu_subcategory_id === state.selectedSubcategoryId);
             }
+            if (state.selectedCategoryId) {
+                return MENU_ITEMS.filter(item => item.menu_category_id === state.selectedCategoryId);
+            }
+            if (state.selectedSectionId) {
+                return MENU_ITEMS.filter(item => item.menu_section_id === state.selectedSectionId);
+            }
+            return MENU_ITEMS;
         };
 
-        // ---------- Actions ----------
-        const setSelectedTable = (tableId) => {
-            const t = findTable(tableId);
-            if (!t) return;
-
-            if (t.status === 'Occupied') return;
-
-            state.selectedTableId = tableId;
-            document.getElementById('selectedTableLabel').textContent = `Table ${tableId}`;
-            renderTablesGrid();
-            document.getElementById('orderTableSelect').value = String(tableId);
+        const renderSections = () => {
+            const list = document.getElementById('sectionsList');
+            list.innerHTML = '';
+            MENU_SECTIONS.forEach(section => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'list-group-item list-group-item-action text-start';
+                button.textContent = section.name;
+                button.dataset.sectionId = section.id;
+                button.addEventListener('click', () => {
+                    state.selectedSectionId = section.id;
+                    state.selectedCategoryId = section.categories[0]?.id ?? null;
+                    state.selectedSubcategoryId = section.categories[0]?.subcategories[0]?.id ?? null;
+                    renderSections();
+                    renderCategories();
+                    renderSubcategories();
+                    renderItemsGrid();
+                });
+                if (section.id === state.selectedSectionId) {
+                    button.classList.add('active');
+                }
+                list.appendChild(button);
+            });
         };
 
-        const addDraftItemFromSelect = () => {
-            const menuId = Number(document.getElementById('menuItemSelect').value);
-            const menuItem = MENU_ITEMS.find(m => m.id === menuId);
-            const qty = Math.max(1, Number(document.getElementById('qtyInput').value || 1));
-            if (!menuItem || !state.selectedTableId) return;
+        const renderCategories = () => {
+            const list = document.getElementById('categoriesList');
+            list.innerHTML = '';
+            const section = MENU_SECTIONS.find(s => s.id === state.selectedSectionId);
+            if (!section || !section.categories.length) {
+                list.innerHTML = '<div class="list-group-item text-muted">No categories</div>';
+                return;
+            }
+            section.categories.forEach(category => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'list-group-item list-group-item-action text-start';
+                button.textContent = category.name;
+                button.dataset.categoryId = category.id;
+                button.addEventListener('click', () => {
+                    state.selectedCategoryId = category.id;
+                    state.selectedSubcategoryId = category.subcategories[0]?.id ?? null;
+                    renderCategories();
+                    renderSubcategories();
+                    renderItemsGrid();
+                });
+                if (category.id === state.selectedCategoryId) {
+                    button.classList.add('active');
+                }
+                list.appendChild(button);
+            });
+        };
 
-            const existingIdx = state.draftItems.findIndex(d => d.menuItemId === menuId);
-            if (existingIdx >= 0) {
-                state.draftItems[existingIdx].qty += qty;
+        const renderSubcategories = () => {
+            const list = document.getElementById('subcategoriesList');
+            list.innerHTML = '';
+            const section = MENU_SECTIONS.find(s => s.id === state.selectedSectionId);
+            const category = section?.categories.find(c => c.id === state.selectedCategoryId);
+            if (!category || !category.subcategories.length) {
+                list.innerHTML = '<div class="list-group-item text-muted">No subcategories</div>';
+                return;
+            }
+            category.subcategories.forEach(subcategory => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'list-group-item list-group-item-action text-start';
+                button.textContent = subcategory.name;
+                button.dataset.subcategoryId = subcategory.id;
+                button.addEventListener('click', () => {
+                    state.selectedSubcategoryId = subcategory.id;
+                    renderSubcategories();
+                    renderItemsGrid();
+                });
+                if (subcategory.id === state.selectedSubcategoryId) {
+                    button.classList.add('active');
+                }
+                list.appendChild(button);
+            });
+        };
+
+        const renderItemsGrid = () => {
+            const items = getCurrentItems();
+            const grid = document.getElementById('itemsGrid');
+            const count = document.getElementById('itemsCount');
+            grid.innerHTML = '';
+            count.textContent = String(items.length);
+
+            if (!items.length) {
+                grid.innerHTML = '<div class="col-12 text-muted small">No menu items in this section.</div>';
+                return;
+            }
+
+            items.forEach(item => {
+                const col = document.createElement('div');
+                col.className = 'col-12 col-md-6';
+                const offerBadge = item.offer_price ?
+                    `<span class="badge text-bg-warning text-dark">Offer</span>` : '';
+                const availability = item.status === 'active' ? 'Available' : 'Unavailable';
+                const availabilityClass = item.status === 'active' ? 'text-success' : 'text-danger';
+                const imageUrl = itemImageUrl(item.image) ||
+                'https://via.placeholder.com/320x240?text=No+Image';
+                col.innerHTML = `
+                    <div class="card h-100 shadow-sm">
+                        <div class="row g-0">
+                            <div class="col-4">
+                                <img src="${imageUrl}" alt="${item.name}" class="img-fluid rounded-start" style="height:100%; width:100%; object-fit:cover;" />
+                            </div>
+                            <div class="col-8">
+                                <div class="card-body d-flex flex-column h-100">
+                                    <div class="d-flex align-items-start justify-content-between gap-2">
+                                        <div>
+                                            <div class="fw-semibold">${item.name}</div>
+                                            <div class="small-muted small">${item.description ? item.description.substring(0, 70) : ''}</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-bold text-primary">${money(item.offer_price || item.price)}</div>
+                                            ${item.offer_price ? `<div class="small text-success">${money(item.price - item.offer_price)} off</div>` : ''}
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 mb-3">
+                                        <span class="small ${availabilityClass}">${availability}</span>
+                                        ${offerBadge}
+                                    </div>
+                                    <div class="mt-auto d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" data-open-item-modal="${item.id}">Details</button>
+                                        <button type="button" class="btn btn-sm btn-success flex-grow-1" data-open-item-modal="${item.id}">Add</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(col);
+            });
+        };
+
+        const openItemModal = (itemId) => {
+            const item = MENU_ITEMS.find(i => i.id === itemId);
+            if (!item) return;
+            state.activeMenuItemId = itemId;
+            state.itemModalQty = 1;
+            state.itemModalInstructions = '';
+
+            document.getElementById('itemModalLabel').textContent = item.name;
+            document.getElementById('itemModalBadge').innerHTML = item.offer_price ?
+                `<span class="badge text-bg-warning text-dark">${item.offer_label || 'Special Offer'}</span>` : '';
+            document.getElementById('itemModalImage').src = itemImageUrl(item.image) ||
+                'https://via.placeholder.com/640x480?text=No+Image';
+            document.getElementById('itemModalName').textContent = item.name;
+            document.getElementById('itemModalAvailability').textContent = item.status === 'active' ? 'Available' :
+                'Unavailable';
+            document.getElementById('itemModalAvailability').className = item.status === 'active' ?
+                'small text-success' : 'small text-danger';
+            document.getElementById('itemModalPrice').textContent = money(item.offer_price || item.price);
+            document.getElementById('itemModalPrepTime').textContent = item.preparation_time ?
+                `${item.preparation_time} min` : '';
+            document.getElementById('itemModalDescription').textContent = item.description || '';
+            document.getElementById('itemModalQty').value = '1';
+            document.getElementById('itemModalInstructions').value = '';
+            document.getElementById('itemModalAddButton').disabled = item.status !== 'active';
+            document.getElementById('itemModalAddButton').textContent = item.status === 'active' ? 'Add to Order' :
+                'Unavailable';
+
+            itemModal.show();
+        };
+
+        const addItemToDraft = () => {
+            const item = MENU_ITEMS.find(i => i.id === state.activeMenuItemId);
+            if (!item || item.status !== 'active') return;
+            const qty = Math.max(1, Number(document.getElementById('itemModalQty').value || 1));
+            const notes = document.getElementById('itemModalInstructions').value.trim();
+            const existing = state.draftItems.find(d => d.menuItemId === item.id && d.specialInstructions === notes);
+            if (existing) {
+                existing.qty += qty;
             } else {
                 state.draftItems.push({
-                    menuItemId: menuItem.id,
-                    name: menuItem.name,
-                    price: menuItem.price,
-                    qty
+                    menuItemId: item.id,
+                    name: item.name,
+                    qty,
+                    unitPrice: item.offer_price ?? item.price,
+                    regularPrice: item.price,
+                    offerPrice: item.offer_price,
+                    specialInstructions: notes || null,
                 });
             }
-
-            document.getElementById('qtyInput').value = 1;
             renderDraftItems();
             renderSummary();
+            itemModal.hide();
         };
 
         const clearDraft = () => {
@@ -748,68 +1173,66 @@
             renderSummary();
         };
 
-        const createOrder = () => {
-            if (!state.selectedTableId) return;
-            if (!state.draftItems.length) return;
+        const submitOrder = () => {
+            const tableId = Number(document.getElementById('orderTableSelect').value || 0);
+            const customerName = document.getElementById('orderCustomerName').value.trim();
+            const phone = document.getElementById('orderCustomerPhone').value.trim();
+            const guestCount = Number(document.getElementById('orderGuestCount').value || 0);
 
-            const newId = state.orders.length ? Math.max(...state.orders.map(o => o.id)) + 1 : 1;
-            const total = computeDraftTotal();
-
-            // Occupy the table
-            const t = findTable(state.selectedTableId);
-            if (t && t.status !== 'Occupied') {
-                t.status = 'Occupied';
-                t.lockedUntil = Date.now() + 60_000; // tiny demo lock
+            if (!tableId) {
+                alert('Please select a table for the order.');
+                return;
+            }
+            if (!customerName || !phone || guestCount < 1) {
+                alert('Customer name, phone, and number of guests are required.');
+                return;
+            }
+            if (!state.draftItems.length) {
+                alert('Add at least one menu item to the order.');
+                return;
             }
 
-            state.orders.unshift({
-                waiterId: currentWaiterId,
-                id: newId,
-                tableId: state.selectedTableId,
-                items: state.draftItems.map(it => ({
-                    ...it
-                })),
-                total,
-                createdAt: new Date().toISOString(),
-                status: 'Active'
-            });
+            document.getElementById('orderFormCustomerName').value = customerName;
+            document.getElementById('orderFormCustomerPhone').value = phone;
+            document.getElementById('orderFormGuestCount').value = guestCount;
+            document.getElementById('orderFormTableId').value = tableId;
+            document.getElementById('orderFormOrderItems').value = JSON.stringify(state.draftItems.map((it) => ({
+                menu_item_id: it.menuItemId,
+                quantity: it.qty,
+                offer_price: it.offerPrice ?? undefined,
+                special_instructions: it.specialInstructions ?? null
+            })));
 
-            // Clear draft
-            clearDraft();
-
-            renderTablesGrid();
-            renderTableSelects();
-            renderOrdersAndReservations();
+            document.getElementById('orderForm').submit();
         };
 
         const createReservation = () => {
-            const tableId = Number(document.getElementById('reservationTableSelect').value);
-            const name = document.getElementById('resName').value.trim();
-            const phone = document.getElementById('resPhone').value.trim();
-            const date = document.getElementById('resDate').value;
-            const time = document.getElementById('resTime').value;
-            const partySize = Number(document.getElementById('resPartySize').value || 1);
-            const status = document.getElementById('resStatus').value;
-            const notes = document.getElementById('resNotes').value.trim();
+            const tableId = Number(document.getElementById('table_id').value || 0);
+            const name = document.getElementById('customer_name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const date = document.getElementById('reservation_date').value;
+            const time = document.getElementById('reservation_time').value;
+            const partySize = Number(document.getElementById('guest_count').value || 1);
+            const notes = document.getElementById('notes').value.trim();
 
-            if (!tableId || !name || !date || !time) {
-                alert('Reservation requires: Table, Customer Name, Date, Time');
+            if (!tableId && document.getElementById('reservation_type').value === 'scheduled') {
+                alert('Please select a table or use auto-assign.');
+                return;
+            }
+
+            if (!name || !phone || !partySize) {
+                alert('Reservation requires customer name, phone, and guest count.');
                 return;
             }
 
             const t = findTable(tableId);
-            if (!t || t.status === 'Occupied') {
+            if (tableId && (!t || t.status === 'Occupied')) {
                 alert('This table is occupied. Choose another table.');
                 return;
             }
 
-            const newId = state.reservations.length ? Math.max(...state.reservations.map(r => r.id)) + 1 : 1;
-
-            // Mark table as Reserved
-            t.status = 'Reserved';
-
             state.reservations.unshift({
-                id: newId,
+                id: Date.now(),
                 tableId,
                 name,
                 phone,
@@ -817,13 +1240,8 @@
                 time,
                 partySize,
                 notes,
-                status
+                status: 'Reserved'
             });
-
-            // Reset form (keep status)
-            document.getElementById('resName').value = '';
-            document.getElementById('resPhone').value = '';
-            document.getElementById('resNotes').value = '';
 
             renderTablesGrid();
             renderTableSelects();
@@ -846,12 +1264,7 @@
         };
 
         const resetDemo = () => {
-            state.tables = new Array(12).fill(0).map((_, i) => ({
-                id: i + 1,
-                name: 'Table ' + (i + 1),
-                status: 'Available',
-                lockedUntil: null
-            }));
+            state.tables = normalizedTables;
             state.selectedTableId = null;
             state.draftItems = [];
             state.orders = [];
@@ -866,9 +1279,20 @@
 
         // ---------- Boot ----------
         const init = () => {
+            if (MENU_SECTIONS.length) {
+                state.selectedSectionId = MENU_SECTIONS[0].id;
+                state.selectedCategoryId = MENU_SECTIONS[0].categories[0]?.id ?? null;
+                state.selectedSubcategoryId = MENU_SECTIONS[0].categories[0]?.subcategories[0]?.id ?? null;
+            }
+
+            itemModal = new bootstrap.Modal(document.getElementById('itemModal'));
+
             renderTablesGrid();
             renderTableSelects();
-            renderMenuItemSelect();
+            renderSections();
+            renderCategories();
+            renderSubcategories();
+            renderItemsGrid();
             renderDraftItems();
             renderSummary();
             renderOrdersAndReservations();
@@ -876,9 +1300,14 @@
             // default reservation date/time
             const now = new Date();
             const pad = (n) => String(n).padStart(2, '0');
-            document.getElementById('resDate').value =
-                `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-            document.getElementById('resTime').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            const dateField = document.getElementById('reservation_date');
+            const timeField = document.getElementById('reservation_time');
+            if (dateField) {
+                dateField.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+            }
+            if (timeField) {
+                timeField.value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            }
         };
 
         // ---------- Events ----------
@@ -940,46 +1369,47 @@
         document.getElementById('btnMarkAvailable').addEventListener('click', markSelectedAvailable);
 
         document.getElementById('btnClearDraft').addEventListener('click', clearDraft);
-        document.getElementById('btnAddItem').addEventListener('click', addDraftItemFromSelect);
-        document.getElementById('btnCreateOrder').addEventListener('click', createOrder);
-        document.getElementById('btnCreateReservation').addEventListener('click', createReservation);
-        document.getElementById('btnClearAll').addEventListener('click', resetDemo);
+        document.getElementById('btnCreateOrder').addEventListener('click', submitOrder);
+        const clearAllButton = document.getElementById('btnClearAll');
+        if (clearAllButton) {
+            clearAllButton.addEventListener('click', resetDemo);
+        }
 
         document.getElementById('orderTableSelect').addEventListener('change', (ev) => {
             const id = Number(ev.target.value);
             setSelectedTable(id);
         });
 
-        document.getElementById('menuItemSelect').addEventListener('change', (ev) => {
-            const id = Number(ev.target.value);
-            const mi = MENU_ITEMS.find(m => m.id === id);
-            document.getElementById('menuItemPrice').textContent = money(mi ? mi.price : 0);
+        document.addEventListener('click', (event) => {
+            const actionBtn = event.target.closest('[data-open-item-modal]');
+            if (actionBtn) {
+                const itemId = Number(actionBtn.dataset.openItemModal);
+                openItemModal(itemId);
+            }
         });
 
-        document.getElementById('qtyMinus').addEventListener('click', () => {
-            const inp = document.getElementById('qtyInput');
-            const v = Math.max(1, Number(inp.value || 1) - 1);
-            inp.value = v;
+        document.getElementById('itemModalQtyMinus').addEventListener('click', () => {
+            const qtyInput = document.getElementById('itemModalQty');
+            qtyInput.value = Math.max(1, Number(qtyInput.value || 1) - 1);
         });
-        document.getElementById('qtyPlus').addEventListener('click', () => {
-            const inp = document.getElementById('qtyInput');
-            const v = Math.max(1, Number(inp.value || 1) + 1);
-            inp.value = v;
+        document.getElementById('itemModalQtyPlus').addEventListener('click', () => {
+            const qtyInput = document.getElementById('itemModalQty');
+            qtyInput.value = Math.max(1, Number(qtyInput.value || 1) + 1);
         });
 
-        const updateLineTotal = () => {
-            const menuId = Number(document.getElementById('menuItemSelect').value);
-            const mi = MENU_ITEMS.find(m => m.id === menuId);
-            const qty = Math.max(1, Number(document.getElementById('qtyInput').value || 1));
-            const line = (mi ? mi.price : 0) * qty;
-            document.getElementById('lineTotal').textContent = money(line);
-        };
+        document.getElementById('itemModalAddButton').addEventListener('click', addItemToDraft);
 
-        document.getElementById('qtyInput').addEventListener('input', updateLineTotal);
-        document.getElementById('menuItemSelect').addEventListener('change', updateLineTotal);
-        document.getElementById('qtyMinus').addEventListener('click', updateLineTotal);
-        document.getElementById('qtyPlus').addEventListener('click', updateLineTotal);
+        const reservationTypeSelect = document.getElementById('reservation_type');
+        const scheduledFields = document.getElementById('scheduledFields');
+        if (reservationTypeSelect && scheduledFields) {
+            const toggleScheduledFields = () => {
+                scheduledFields.style.display = reservationTypeSelect.value === 'scheduled' ? 'flex' : 'none';
+            };
+            reservationTypeSelect.addEventListener('change', toggleScheduledFields);
+            toggleScheduledFields();
+        }
 
         init();
     </script>
+
 </html>

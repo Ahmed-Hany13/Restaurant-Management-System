@@ -15,7 +15,7 @@ class MenuSectionController extends Controller
      */
     public function index()
     {
-        $sections = MenuSection::all();
+        $sections = MenuSection::paginate(10);
         return view('admin.sections.view-sections',compact('sections'));
     }
 

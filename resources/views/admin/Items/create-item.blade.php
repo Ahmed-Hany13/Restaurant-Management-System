@@ -156,6 +156,11 @@
                                         </select>
                                     </div>
 
+                                    <div class="mb-3">
+                                        <label for="image" class="form-label">Item Image</label>
+                                        <input type="file" class="form-control" id="image" name="image">
+                                    </div>
+
                                     <!-- Form Actions -->
                                     <div class="d-flex gap-2">
                                         <button type="submit" class="btn btn-primary">

@@ -16,11 +16,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        User::create([
+            'name' => 'admin',
+            'email' => 'admin@admin.com',
+            'password' => Hash::make('123123Aa'),
+        ]);
         $this->call([
             MenuSectionSeeder::class,
             MenuCategorySeeder::class,
             MenuSubcategorySeeder::class,
             MenuItemSeeder::class,
+            OfferSeeder::class,
+            TableSeeder::class,
+            OrderSeeder::class,
         ]);
     }
 }

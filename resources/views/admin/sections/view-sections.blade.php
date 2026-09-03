@@ -56,17 +56,16 @@
                                                 <th style="width: 160px;">Status</th>
                                             </tr>
                                         </thead>
-
                                         {{-- UI-only mock data. Replace with backend data when available. --}}
                                         <tbody id="sectionsTableBody">
-                                            @foreach ($sections as $section)
+                                            @forelse ($sections as $section)
                                                 <tr data-section-row>
                                                     <td>
                                                         <div class="d-flex flex-column gap-1">
                                                             <a href="{{ route('section.show',$section->id) }}" class="btn btn-sm btn-outline-secondary mt-1" title="View">
                                                                 <i class="bi bi-eye"></i>
                                                             </a>
-                                                            
+
                                                             <a href="{{ route('section.edit',$section->id) }}" class="btn btn-sm btn-outline-primary mt-1" title="Edit">
                                                                 <i class="bi bi-pencil"></i>
                                                             </a>
@@ -96,9 +95,17 @@
                                                     <td><span class="badge text-bg-light" data-display-order>{{ $section->display_order }}</span></td>
                                                     <td><span class="badge bg-success" data-status>{{ $section->status }}</span></td>
                                                 </tr>
-                                            @endforeach
+                                            @empty
+                                                <tr>
+                                                    <td colspan="5" class="text-center text-muted">No sections found</td>
+                                                </tr>
+                                            @endforelse
                                         </tbody>
                                     </table>
+                                </div>
+
+                                <div class="d-flex justify-content-end mt-3">
+                                    {{ $sections->links() }}
                                 </div>
                             </div>
                         </div>

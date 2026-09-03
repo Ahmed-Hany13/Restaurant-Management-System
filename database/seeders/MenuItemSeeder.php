@@ -13,6 +13,6 @@ class MenuItemSeeder extends Seeder
      */
     public function run(): void
     {
-        MenuItem::factory(200)->create();
+        MenuItem::factory(10)->create();
     }
 }

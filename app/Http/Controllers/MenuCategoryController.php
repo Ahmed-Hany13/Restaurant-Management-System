@@ -15,7 +15,7 @@ class MenuCategoryController extends Controller
      */
     public function index()
     {
-        $categories = MenuCategory::with('menuSection')->get();
+        $categories = MenuCategory::with('menuSection')->paginate(10);
         return view('admin.categories.view-categories',compact('categories'));
     }
 

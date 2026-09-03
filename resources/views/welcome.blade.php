@@ -79,11 +79,6 @@
                         <a href="{{ route('login') }}" class="btn btn-primary btn-pill">
                             <i class="bi bi-box-arrow-in-right me-1"></i> Log in
                         </a>
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="btn btn-outline-primary btn-pill">
-                                <i class="bi bi-person-plus me-1"></i> Register
-                            </a>
-                        @endif
                     @endauth
                 @endif
             </div>
@@ -114,7 +109,7 @@
                                     <a href="{{ route('create-staff') }}" class="btn btn-outline-primary btn-pill">
                                         <i class="bi bi-person-plus me-1"></i> Create Staff
                                     </a>
-                                    <a href="{{ route('orders_page') }}" class="btn btn-outline-secondary btn-pill">
+                                    <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary btn-pill">
                                         <i class="bi bi-receipt me-1"></i> Orders
                                     </a>
                                     <a href="{{ route('kitchen') }}" class="btn btn-outline-secondary btn-pill">
@@ -126,11 +121,6 @@
                                     <a href="{{ route('login') }}" class="btn btn-primary btn-pill">
                                         <i class="bi bi-box-arrow-in-right me-1"></i> Log in
                                     </a>
-                                    @if (Route::has('register'))
-                                        <a href="{{ route('register') }}" class="btn btn-outline-primary btn-pill">
-                                            <i class="bi bi-person-plus me-1"></i> Register
-                                        </a>
-                                    @endif
                                 </div>
                             @endauth
 

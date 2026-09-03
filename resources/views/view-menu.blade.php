@@ -3,351 +3,274 @@
 @section('title', 'Menu')
 
 @section('content')
-    <main class="app-main">
-        <div class="app-content-header">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-sm-6">
-                        <h3 class="mb-0">Menu</h3>
+    <div class="container-fluid py-4">
+        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+            <div>
+                <h3 class="mb-1">Browse Menu</h3>
+                <div class="text-muted small">Sections → Categories → Subcategories → Items</div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-lg-3">
+                <div class="card h-100">
+                    <div class="card-header">Browse by Sections</div>
+                    <div class="card-body p-0">
+                        <ul id="sectionsList" class="list-group list-group-flush"></ul>
                     </div>
-                    <div class="col-sm-6">
-                        <ol class="breadcrumb float-sm-end">
-                            <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Menu</li>
-                        </ol>
+                </div>
+            </div>
+
+            <div class="col-lg-3">
+                <div class="card h-100">
+                    <div class="card-header">Categories</div>
+                    <div class="card-body p-0">
+                        <ul id="categoriesList" class="list-group list-group-flush"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3">
+                <div class="card h-100">
+                    <div class="card-header">Subcategories</div>
+                    <div class="card-body p-0">
+                        <ul id="subcategoriesList" class="list-group list-group-flush"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center justify-content-between gap-2">
+                        <span>Items</span>
+                        <span id="itemsCount" class="badge bg-secondary">0</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="itemsGrid" class="row g-3"></div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="app-content">
-            <div class="container-fluid">
-                <div class="row">
-                    <!-- Sidebar Navigation -->
-                    <div class="col-lg-3 col-md-4 mb-4 mb-md-0">
-                        <div class="card card-outline card-primary">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Browse Menu</h5>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="list-group list-group-flush" id="sectionsList">
-                                    <!-- Sections will be loaded here -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Categories -->
-                        <div id="categoriesContainer" style="display: none;" class="mt-3">
-                            <div class="card card-outline card-secondary">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Categories</h5>
-                                </div>
-                                <div class="card-body p-0">
-                                    <div class="list-group list-group-flush" id="categoriesList">
-                                        <!-- Categories will be loaded here -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Subcategories -->
-                        <div id="subcategoriesContainer" style="display: none;" class="mt-3">
-                            <div class="card card-outline card-info">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Subcategories</h5>
-                                </div>
-                                <div class="card-body p-0">
-                                    <div class="list-group list-group-flush" id="subcategoriesList">
-                                        <!-- Subcategories will be loaded here -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Items Grid -->
-                    <div class="col-lg-9 col-md-8">
-                        <div class="card card-outline card-primary">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <span id="currentSection">Select a Section</span>
-                                    <span id="categoryBreadcrumb"></span>
-                                    <span id="subcategoryBreadcrumb"></span>
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="itemsGrid" class="row g-3">
-                                    <div class="col-12">
-                                        <div class="alert alert-info" role="alert">
-                                            <i class="bi bi-info-circle me-2"></i> Select a section from the left to browse items.
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
+    </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const sectionsList = document.getElementById('sectionsList');
-            const categoriesList = document.getElementById('categoriesList');
-            const subcategoriesList = document.getElementById('subcategoriesList');
-            const itemsGrid = document.getElementById('itemsGrid');
-            const categoriesContainer = document.getElementById('categoriesContainer');
-            const subcategoriesContainer = document.getElementById('subcategoriesContainer');
-            const currentSection = document.getElementById('currentSection');
-            const categoryBreadcrumb = document.getElementById('categoryBreadcrumb');
-            const subcategoryBreadcrumb = document.getElementById('subcategoryBreadcrumb');
+        // Load data from your Eloquent models via controllers, not hardcoded JSON.
+        // We reuse existing API endpoints that already query Eloquent models.
+        const api = {
+            sections: '{{ route('menu.sections.active') ?? url('/api/sections') }}',
+            categories: '{{ url('/api/categories') }}',
+            subcategories: '{{ url('/api/subcategories') }}',
+            items: '{{ url('/api/items') }}',
+        };
 
-            let selectedSectionId = null;
-            let selectedCategoryId = null;
-            let selectedSubcategoryId = null;
+        const state = {
+            sectionId: null,
+            categoryId: null,
+            subcategoryId: null,
+        };
 
-            // Load sections
-            loadSections();
+        function escapeHtml(str) {
+            return String(str)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '<')
+                .replaceAll('>', '>')
+                .replaceAll('"', '"')
+                .replaceAll("'", '&#039;');
+        }
 
-            function loadSections() {
-                fetch('/api/sections')
-                    .then(response => response.json())
-                    .then(sections => {
-                        sectionsList.innerHTML = '';
-                        sections.forEach(section => {
-                            const btn = document.createElement('button');
-                            btn.type = 'button';
-                            btn.className = 'list-group-item list-group-item-action';
-                            btn.innerHTML = `
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span>${section.name}</span>
-                                    <i class="bi bi-chevron-right text-muted"></i>
-                                </div>
-                            `;
-                            btn.addEventListener('click', () => selectSection(section.id, section.name));
-                            sectionsList.appendChild(btn);
-                        });
-                    })
-                    .catch(error => console.error('Error loading sections:', error));
+        function setActive(listEl, activeId) {
+            listEl.querySelectorAll('[data-id]').forEach(li => {
+                li.classList.toggle('active', String(li.dataset.id) === String(activeId));
+            });
+        }
+
+        async function loadSections() {
+            const res = await fetch(api.sections);
+            const sections = await res.json();
+
+            const list = document.getElementById('sectionsList');
+            list.innerHTML = '';
+
+            if (!sections || sections.length === 0) {
+                list.innerHTML = '<li class="list-group-item text-muted">No active sections</li>';
+                return;
             }
 
-            function selectSection(sectionId, sectionName) {
-                selectedSectionId = sectionId;
-                selectedCategoryId = null;
-                selectedSubcategoryId = null;
+            sections.forEach(s => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item list-group-item-action';
+                li.dataset.id = s.id;
+                li.textContent = s.name;
+                li.addEventListener('click', () => {
+                    state.sectionId = s.id;
+                    document.getElementById('categoriesList').innerHTML = '';
+                    document.getElementById('subcategoriesList').innerHTML = '';
+                    document.getElementById('itemsGrid').innerHTML = '';
+                    document.getElementById('itemsCount').textContent = '0';
 
-                // Highlight section
-                document.querySelectorAll('#sectionsList .list-group-item').forEach(btn => {
-                    btn.classList.remove('active');
+                    loadCategories(s.id);
+                    setActive(list, s.id);
                 });
-                event.target.closest('button').classList.add('active');
+                list.appendChild(li);
+            });
 
-                currentSection.textContent = sectionName;
-                categoryBreadcrumb.textContent = '';
-                subcategoryBreadcrumb.textContent = '';
-                itemsGrid.innerHTML = '';
+            // Auto-load first section
+            state.sectionId = sections[0].id;
+            setActive(list, sections[0].id);
+            await loadCategories(sections[0].id);
+        }
 
-                // Load categories
-                loadCategories(sectionId);
-                categoriesContainer.style.display = 'block';
-                subcategoriesContainer.style.display = 'none';
+        async function loadCategories(sectionId) {
+            const res = await fetch(api.categories + '?section_id=' + encodeURIComponent(sectionId));
+            const categories = await res.json();
+
+            const list = document.getElementById('categoriesList');
+            list.innerHTML = '';
+
+            if (!categories || categories.length === 0) {
+                list.innerHTML = '<li class="list-group-item text-muted">No categories</li>';
+                return;
             }
 
-            function loadCategories(sectionId) {
-                fetch(`/api/categories?section_id=${sectionId}`)
-                    .then(response => response.json())
-                    .then(categories => {
-                        categoriesList.innerHTML = '';
-                        if (categories.length === 0) {
-                            categoriesList.innerHTML = '<div class="list-group-item">No categories available</div>';
-                            return;
-                        }
-                        categories.forEach(category => {
-                            const btn = document.createElement('button');
-                            btn.type = 'button';
-                            btn.className = 'list-group-item list-group-item-action';
-                            btn.innerHTML = `
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span>${category.name}</span>
-                                    <i class="bi bi-chevron-right text-muted"></i>
-                                </div>
-                            `;
-                            btn.addEventListener('click', () => selectCategory(category.id, category.name));
-                            categoriesList.appendChild(btn);
-                        });
-                    })
-                    .catch(error => console.error('Error loading categories:', error));
-            }
+            categories.forEach(c => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item list-group-item-action';
+                li.dataset.id = c.id;
+                li.textContent = c.name;
+                li.addEventListener('click', () => {
+                    document.getElementById('subcategoriesList').innerHTML = '';
+                    document.getElementById('itemsGrid').innerHTML = '';
+                    document.getElementById('itemsCount').textContent = '0';
 
-            function selectCategory(categoryId, categoryName) {
-                selectedCategoryId = categoryId;
-                selectedSubcategoryId = null;
-
-                // Highlight category
-                document.querySelectorAll('#categoriesList .list-group-item').forEach(btn => {
-                    btn.classList.remove('active');
+                    loadSubcategories(c.id);
+                    setActive(list, c.id);
                 });
-                event.target.closest('button').classList.add('active');
+                list.appendChild(li);
+            });
 
-                categoryBreadcrumb.textContent = ' > ' + categoryName;
-                subcategoryBreadcrumb.textContent = '';
-                itemsGrid.innerHTML = '';
+            setActive(list, categories[0].id);
+            await loadSubcategories(categories[0].id);
+        }
 
-                // Load subcategories
-                loadSubcategories(categoryId);
-                subcategoriesContainer.style.display = 'block';
+        async function loadSubcategories(categoryId) {
+            const res = await fetch(api.subcategories + '?category_id=' + encodeURIComponent(categoryId));
+            const subcategories = await res.json();
+
+            const list = document.getElementById('subcategoriesList');
+            list.innerHTML = '';
+
+            if (!subcategories || subcategories.length === 0) {
+                list.innerHTML = '<li class="list-group-item text-muted">No subcategories</li>';
+                return;
             }
 
-            function loadSubcategories(categoryId) {
-                fetch(`/api/subcategories?category_id=${categoryId}`)
-                    .then(response => response.json())
-                    .then(subcategories => {
-                        subcategoriesList.innerHTML = '';
-                        if (subcategories.length === 0) {
-                            subcategoriesList.innerHTML = '<div class="list-group-item">No subcategories available</div>';
-                            return;
-                        }
-                        subcategories.forEach(subcategory => {
-                            const btn = document.createElement('button');
-                            btn.type = 'button';
-                            btn.className = 'list-group-item list-group-item-action';
-                            btn.innerHTML = `
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span>${subcategory.name}</span>
-                                    <i class="bi bi-chevron-right text-muted"></i>
-                                </div>
-                            `;
-                            btn.addEventListener('click', () => selectSubcategory(subcategory.id, subcategory.name));
-                            subcategoriesList.appendChild(btn);
-                        });
-                    })
-                    .catch(error => console.error('Error loading subcategories:', error));
-            }
+            subcategories.forEach(sc => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item list-group-item-action';
+                li.dataset.id = sc.id;
+                li.textContent = sc.name;
+                li.addEventListener('click', () => {
+                    document.getElementById('itemsGrid').innerHTML = '';
+                    document.getElementById('itemsCount').textContent = '0';
 
-            function selectSubcategory(subcategoryId, subcategoryName) {
-                selectedSubcategoryId = subcategoryId;
-
-                // Highlight subcategory
-                document.querySelectorAll('#subcategoriesList .list-group-item').forEach(btn => {
-                    btn.classList.remove('active');
+                    loadItems(sc.id);
+                    setActive(list, sc.id);
                 });
-                event.target.closest('button').classList.add('active');
+                list.appendChild(li);
+            });
 
-                subcategoryBreadcrumb.textContent = ' > ' + subcategoryName;
+            setActive(list, subcategories[0].id);
+            await loadItems(subcategories[0].id);
+        }
 
-                // Load items
-                loadItems(subcategoryId);
+        function itemImageUrl(path) {
+            if (!path) return '';
+            if (String(path).startsWith('http')) return path;
+            return '/storage/' + String(path).replaceAll('public/', '');
+        }
+
+        async function loadItems(subcategoryId) {
+            const res = await fetch(api.items + '?subcategory_id=' + encodeURIComponent(subcategoryId));
+            const items = await res.json();
+
+            const grid = document.getElementById('itemsGrid');
+            const count = document.getElementById('itemsCount');
+            grid.innerHTML = '';
+            count.textContent = String(items?.length || 0);
+
+            if (!items || items.length === 0) {
+                grid.innerHTML = '<div class="text-muted small">No items</div>';
+                return;
             }
 
-            function loadItems(subcategoryId) {
-                fetch(`/api/items?subcategory_id=${subcategoryId}`)
-                    .then(response => response.json())
-                    .then(items => {
-                        itemsGrid.innerHTML = '';
-                        if (items.length === 0) {
-                            itemsGrid.innerHTML = '<div class="col-12"><div class="alert alert-info">No items available in this subcategory.</div></div>';
-                            return;
-                        }
-                        items.forEach(item => {
-                            const itemCard = createItemCard(item);
-                            itemsGrid.appendChild(itemCard);
-                        });
-                    })
-                    .catch(error => console.error('Error loading items:', error));
-            }
-
-            function createItemCard(item) {
+            items.forEach(item => {
                 const col = document.createElement('div');
-                col.className = 'col-lg-4 col-md-6 col-sm-12';
+                col.className = 'col-12';
 
-                const imageUrl = item.image ? `/storage/${item.image}` : '/images/placeholder.svg';
+                const imgUrl = itemImageUrl(item.image);
+                const tags = (item.tags && Array.isArray(item.tags)) ? item.tags : [];
 
                 col.innerHTML = `
-                    <div class="card h-100 shadow-sm hover-shadow transition">
-                        <div class="item-image-wrapper" style="height: 200px; overflow: hidden; background: #f0f0f0;">
-                            <img src="${imageUrl}" alt="${item.name}" class="card-img-top" style="height: 100%; object-fit: cover; width: 100%;">
+                <div class="card shadow-sm h-100">
+                    <div class="row g-0">
+                        <div class="col-4 p-2">
+                            <img
+                                src="${imgUrl || '/storage/menu-items/placeholder.svg'}"
+                                alt="${escapeHtml(item.name)}"
+                                class="img-fluid rounded"
+                                style="height:100px; object-fit:cover; width:100%;"
+                            />
                         </div>
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title">${item.name}</h5>
-                            <p class="card-text text-muted small" style="flex-grow: 1;">
-                                ${item.description ? item.description.substring(0, 100) + '...' : 'No description'}
-                            </p>
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <span class="badge bg-success fs-6">$${parseFloat(item.price).toFixed(2)}</span>
-                                ${item.preparation_time ? `<span class="badge bg-info"><i class="bi bi-clock me-1"></i>${item.preparation_time}m</span>` : ''}
+                        <div class="col-8">
+                            <div class="card-body p-2">
+                                <div class="d-flex align-items-start justify-content-between gap-2">
+                                    <div>
+                                        <div class="fw-semibold">${escapeHtml(item.name)}</div>
+                                        <div class="text-muted small">${item.preparation_time ? (item.preparation_time + ' min') : ''}</div>
+                                    </div>
+                                    <div class="fw-bold text-primary">${escapeHtml(item.price ?? '')}</div>
+                                </div>
+
+                                <div class="small text-muted mt-2" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">
+                                    ${escapeHtml(item.description ?? '')}
+                                </div>
+
+                                ${tags.length ? `
+                                        <div class="mt-2 d-flex flex-wrap gap-1">
+                                            ${tags.slice(0, 6).map(t => `<span class="badge text-bg-light border">${escapeHtml(t)}</span>`).join('')}
+                                        </div>
+                                    ` : ''}
+
+                                <button class="btn btn-sm btn-success mt-2 w-100" type="button" data-item-id="${item.id}">
+                                    Add to Order
+                                </button>
                             </div>
-                            <button class="btn btn-primary btn-sm w-100" onclick="addToOrder(${item.id}, '${item.name.replace(/'/g, "\\'")}', ${item.price})">
-                                <i class="bi bi-plus-circle me-1"></i> Add to Order
-                            </button>
                         </div>
                     </div>
-                `;
+                </div>
+            `;
 
-                return col;
-            }
+                col.querySelector('button[data-item-id]').addEventListener('click', () => {
+                    const btn = col.querySelector('button');
+                    btn.disabled = true;
+                    btn.textContent = 'Added';
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.textContent = 'Add to Order';
+                    }, 800);
+                });
 
-            // Add to Order function
-            window.addToOrder = function(itemId, itemName, price) {
-                alert(`Added "${itemName}" ($${parseFloat(price).toFixed(2)}) to order!\n\nThis would be integrated with your order system.`);
-                // TODO: Integrate with order management system
-            };
+                grid.appendChild(col);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSections().catch(err => {
+                console.error(err);
+                const list = document.getElementById('sectionsList');
+                if (list) list.innerHTML =
+                    '<li class="list-group-item text-danger">Failed to load menu</li>';
+            });
         });
     </script>
-
-    <style>
-        .hover-shadow {
-            transition: box-shadow 0.3s ease, transform 0.3s ease;
-        }
-
-        .hover-shadow:hover {
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
-            transform: translateY(-4px);
-        }
-
-        .list-group-item {
-            border: none;
-            border-bottom: 1px solid #dee2e6;
-            transition: all 0.3s ease;
-        }
-
-        .list-group-item:hover {
-            background-color: #f8f9fa;
-            transform: translateX(4px);
-        }
-
-        .list-group-item.active {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
-            color: white;
-        }
-
-        .card-title {
-            font-weight: 600;
-            color: #333;
-        }
-
-        #currentSection {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        #categoryBreadcrumb,
-        #subcategoryBreadcrumb {
-            font-size: 0.95rem;
-            color: #6c757d;
-        }
-
-        .item-image-wrapper {
-            position: relative;
-        }
-
-        .item-image-wrapper img {
-            transition: transform 0.3s ease;
-        }
-
-        .card:hover .item-image-wrapper img {
-            transform: scale(1.05);
-        }
-    </style>
 @endsection

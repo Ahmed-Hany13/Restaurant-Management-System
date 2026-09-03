@@ -62,9 +62,10 @@
                                             <div class="col-lg-2">
                                                 <select id="filterSection" class="form-select">
                                                     <option value="">All Sections</option>
-                                                    @foreach($items->unique('menuSubcategory.menuCategory.menuSection.id') as $item)
-                                                        @if($item->menuSubcategory && $item->menuSubcategory->menuCategory && $item->menuSubcategory->menuCategory->menuSection)
-                                                            <option value="{{ $item->menuSubcategory->menuCategory->menuSection->id }}">
+                                                    @foreach ($items->unique('menuSubcategory.menuCategory.menuSection.id') as $item)
+                                                        @if ($item->menuSubcategory && $item->menuSubcategory->menuCategory && $item->menuSubcategory->menuCategory->menuSection)
+                                                            <option
+                                                                value="{{ $item->menuSubcategory->menuCategory->menuSection->id }}">
                                                                 {{ $item->menuSubcategory->menuCategory->menuSection->name }}
                                                             </option>
                                                         @endif
@@ -76,9 +77,10 @@
                                             <div class="col-lg-2">
                                                 <select id="filterCategory" class="form-select">
                                                     <option value="">All Categories</option>
-                                                    @foreach($items->unique('menuSubcategory.menuCategory.id') as $item)
-                                                        @if($item->menuSubcategory && $item->menuSubcategory->menuCategory)
-                                                            <option value="{{ $item->menuSubcategory->menuCategory->id }}" data-section="{{ $item->menuSubcategory->menuCategory->menu_section_id }}">
+                                                    @foreach ($items->unique('menuSubcategory.menuCategory.id') as $item)
+                                                        @if ($item->menuSubcategory && $item->menuSubcategory->menuCategory)
+                                                            <option value="{{ $item->menuSubcategory->menuCategory->id }}"
+                                                                data-section="{{ $item->menuSubcategory->menuCategory->menu_section_id }}">
                                                                 {{ $item->menuSubcategory->menuCategory->name }}
                                                             </option>
                                                         @endif
@@ -90,9 +92,10 @@
                                             <div class="col-lg-2">
                                                 <select id="filterSubcategory" class="form-select">
                                                     <option value="">All Subcategories</option>
-                                                    @foreach($items->unique('menuSubcategory.id') as $item)
-                                                        @if($item->menuSubcategory)
-                                                            <option value="{{ $item->menuSubcategory->id }}" data-category="{{ $item->menuSubcategory->menu_category_id }}">
+                                                    @foreach ($items->unique('menuSubcategory.id') as $item)
+                                                        @if ($item->menuSubcategory)
+                                                            <option value="{{ $item->menuSubcategory->id }}"
+                                                                data-category="{{ $item->menuSubcategory->menu_category_id }}">
                                                                 {{ $item->menuSubcategory->name }}
                                                             </option>
                                                         @endif
@@ -137,9 +140,8 @@
                                         </thead>
 
                                         <tbody id="itemsTableBody">
-                                            @foreach ($items as $item)
-                                                <tr data-item-row
-                                                    data-name="{{ strtolower($item->name) }}"
+                                            @forelse ($items as $item)
+                                                <tr data-item-row data-name="{{ strtolower($item->name) }}"
                                                     data-section="{{ $item->menuSubcategory->menuCategory->menu_section_id ?? '' }}"
                                                     data-category="{{ $item->menuSubcategory->menu_category_id ?? '' }}"
                                                     data-subcategory="{{ $item->menu_subcategory_id }}"
@@ -150,7 +152,7 @@
                                                                 class="btn btn-sm btn-outline-secondary" title="View">
                                                                 <i class="bi bi-eye"></i>
                                                             </a>
-                                                            
+
                                                             <a href="{{ route('item.edit', $item->id) }}"
                                                                 class="btn btn-sm btn-outline-primary" title="Edit">
                                                                 <i class="bi bi-pencil"></i>
@@ -161,8 +163,10 @@
                                                                 method="POST" class="d-inline">
                                                                 @csrf
                                                                 @method('DELETE')
-                                                                <button type="submit" class="btn btn-sm btn-outline-danger w-100"
-                                                                    title="Delete" onclick="return confirm('Are you sure?')">
+                                                                <button type="submit"
+                                                                    class="btn btn-sm btn-outline-danger w-100"
+                                                                    title="Delete"
+                                                                    onclick="return confirm('Are you sure?')">
                                                                     <i class="bi bi-trash"></i>
                                                                 </button>
                                                             </form>
@@ -170,7 +174,7 @@
                                                     </td>
 
                                                     <td>
-                                                        @if($item->image)
+                                                        @if ($item->image)
                                                             <img src="{{ asset('storage/' . $item->image) }}"
                                                                 alt="{{ $item->name }}" class="img-thumbnail"
                                                                 style="width: 60px; height: 60px; object-fit: cover;">
@@ -188,42 +192,122 @@
                                                     </td>
 
                                                     <td>
-                                                        <span class="badge bg-info">{{ $item->menuSubcategory->name ?? '--' }}</span>
+                                                        <span
+                                                            class="badge bg-info">{{ $item->menuSubcategory->name ?? '--' }}</span>
                                                     </td>
 
                                                     <td>
-                                                        <span class="badge bg-warning text-dark">{{ $item->menuSubcategory->menuCategory->name ?? '--' }}</span>
+                                                        <span
+                                                            class="badge bg-warning text-dark">{{ $item->menuSubcategory->menuCategory->name ?? '--' }}</span>
                                                     </td>
 
                                                     <td>
-                                                        <span class="badge bg-secondary">{{ $item->menuSubcategory->menuCategory->menuSection->name ?? '--' }}</span>
+                                                        <span
+                                                            class="badge bg-secondary">{{ $item->menuSubcategory->menuCategory->menuSection->name ?? '--' }}</span>
                                                     </td>
 
                                                     <td>
-                                                        <div class="fw-bold text-success">${{ number_format($item->price, 2) }}</div>
+                                                        @php
+                                                            $activeOffers = $item->getActiveOffers();
+                                                            $hasActiveOffer = $activeOffers->count() > 0;
+                                                        @endphp
+
+                                                        @if ($hasActiveOffer)
+                                                            @php
+                                                                $offer = $activeOffers->first();
+                                                                $originalPrice = $item->price;
+
+                                                                if ($offer->discount_type === 'percentage') {
+                                                                    $discountedPrice = $originalPrice * (100 - $offer->discount_value) / 100;
+                                                                } else {
+                                                                    $discountedPrice =  $originalPrice - $offer->discount_value;
+                                                                }
+                                                            @endphp
+                                                            <div>
+                                                                <div class="fw-bold text-danger">
+                                                                    <s>${{ number_format($originalPrice, 2) }}</s>
+                                                                </div>
+                                                                <div class="fw-bold text-success">
+                                                                    ${{ number_format($discountedPrice, 2) }}
+                                                                </div>
+                                                                <small class="text-muted">
+                                                                    @if ($offer->discount_type === 'percentage')
+                                                                        Save {{ $offer->discount_value }}%
+                                                                    @else
+                                                                        Save ${{ number_format($offer->discount_value, 2) }}
+                                                                    @endif
+                                                                </small>
+                                                            </div>
+                                                        @else
+                                                            <div class="fw-bold text-success">
+                                                                ${{ number_format($item->price, 2) }}</div>
+                                                        @endif
                                                     </td>
 
                                                     <td>
-                                                        <span class="badge @if($item->status === 'active') bg-success @else bg-danger @endif">
+                                                        <span
+                                                            class="badge @if ($item->status === 'active') bg-success @else bg-danger @endif">
                                                             {{ ucfirst($item->status) }}
                                                         </span>
                                                     </td>
 
                                                     <td>
-                                                        <span class="badge @if($item->has_offer) bg-primary @else bg-secondary @endif">
+                                                        <span
+                                                            class="badge @if ($item->has_offer) bg-primary @else bg-secondary @endif">
                                                             {{ $item->has_offer ? 'Yes' : 'No' }}
                                                         </span>
                                                     </td>
                                                 </tr>
-                                            @endforeach
+                                            @empty
+                                                <tr>
+                                                    <td colspan="9" class="text-center text-muted">No menu items found
+                                                    </td>
+                                                </tr>
+                                            @endforelse
                                         </tbody>
                                     </table>
 
-                                    @if(count($items) === 0)
+                                    @if (count($items) === 0)
                                         <div class="alert alert-info text-center mt-3">
                                             <i class="bi bi-info-circle me-2"></i> No menu items found.
                                         </div>
                                     @endif
+                                </div>
+                                <!-- /.card-body -->
+                                <div class="card-footer clearfix">
+                                    <style>
+                                        .pagination {
+                                            margin: 0;
+                                            gap: 0.25rem;
+                                            justify-content: flex-end;
+                                        }
+
+                                        .pagination .page-link {
+                                            padding: 0.35rem 0.6rem;
+                                            font-size: 0.875rem;
+                                            line-height: 1.25;
+                                            border-radius: 0.25rem;
+                                        }
+
+                                        .pagination .page-link:hover {
+                                            background-color: #e9ecef;
+                                        }
+
+                                        .pagination .page-item.active .page-link {
+                                            background-color: #0d6efd;
+                                            border-color: #0d6efd;
+                                        }
+
+                                        .pagination .page-item.disabled .page-link {
+                                            color: #6c757d;
+                                            pointer-events: none;
+                                            background-color: #fff;
+                                            border-color: #dee2e6;
+                                        }
+                                    </style>
+                                    <div class="d-flex justify-content-end">
+                                        {{ $items->links() }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -286,7 +370,8 @@
                     const matchesSubcategory = subcategoryId === '' || rowSubcategory === subcategoryId;
                     const matchesStatus = status === '' || rowStatus === status;
 
-                    row.style.display = matchesSearch && matchesSection && matchesCategory && matchesSubcategory && matchesStatus ? '' : 'none';
+                    row.style.display = matchesSearch && matchesSection && matchesCategory &&
+                        matchesSubcategory && matchesStatus ? '' : 'none';
                 });
             }
 

@@ -32,7 +32,7 @@ class AuthenticatedSessionController extends Controller
 
         return match ($role) {
             'admin' => redirect()->route('dashboard')->with('success', "Login Done Successfully"),
-            'waiter' => redirect()->route('orders_page')->with('success', "Login Done Successfully"),
+            'waiter' => redirect()->route('orders.index')->with('success', "Login Done Successfully"),
             'cashier' => redirect()->route('billing_page')->with('success', "Login Done Successfully"),
             'kitchen_staff' => redirect()->route('kitchen')->with('success', "Login Done Successfully"),
 

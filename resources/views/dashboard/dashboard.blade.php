@@ -47,7 +47,7 @@
                     <div class="col-lg-3 col-6">
                         <div class="small-box text-bg-success">
                             <div class="inner">
-                                <h3>0</h3>
+                                <h3>{{ count($orders) }}</h3>
                                 <p>Total Orders</p>
                             </div>
                             <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24"
@@ -68,7 +68,10 @@
                     <div class="col-lg-3 col-6">
                         <div class="small-box text-bg-warning">
                             <div class="inner">
-                                <h3>0</h3>
+                                @php
+                                    $num = count($tables->where('status', 'occupied'));
+                                @endphp
+                                <h3>{{ $num }}</h3>
                                 <p>Occupied Tables</p>
                             </div>
                             <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24"
@@ -88,7 +91,7 @@
                     <div class="col-lg-3 col-6">
                         <div class="small-box text-bg-danger">
                             <div class="inner">
-                                <h3>0</h3>
+                                <h3>{{ count($orders->where('status','pending')) }}</h3>
                                 <p>Pending Orders</p>
                             </div>
                             <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24"
@@ -127,84 +130,35 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr>
-                                                <td>#1008</td>
-                                                <td>Table 3</td>
-                                                <td>$42.50</td>
-                                                <td><span class="badge text-bg-warning">Pending</span></td>
-                                                <td>Today, 10:12</td>
-                                            </tr>
-                                            <tr>
-                                                <td>#1007</td>
-                                                <td>Table 1</td>
-                                                <td>$18.75</td>
-                                                <td><span class="badge text-bg-success">Completed</span></td>
-                                                <td>Today, 09:55</td>
-                                            </tr>
-                                            <tr>
-                                                <td>#1006</td>
-                                                <td>Table 5</td>
-                                                <td>$76.20</td>
-                                                <td><span class="badge text-bg-primary">In Progress</span></td>
-                                                <td>Today, 09:33</td>
-                                            </tr>
-                                            <tr>
-                                                <td>#1005</td>
-                                                <td>Table 2</td>
-                                                <td>$29.99</td>
-                                                <td><span class="badge text-bg-warning">Pending</span></td>
-                                                <td>Today, 09:10</td>
-                                            </tr>
-                                            <tr>
-                                                <td>#1004</td>
-                                                <td>Table 7</td>
-                                                <td>$55.00</td>
-                                                <td><span class="badge text-bg-success">Completed</span></td>
-                                                <td>Today, 08:48</td>
-                                            </tr>
-                                            <tr>
-                                                <td>#1003</td>
-                                                <td>Table 4</td>
-                                                <td>$12.40</td>
-                                                <td><span class="badge text-bg-primary">In Progress</span></td>
-                                                <td>Today, 08:25</td>
-                                            </tr>
-                                            <tr>
-                                                <td>#1002</td>
-                                                <td>Table 6</td>
-                                                <td>$64.10</td>
-                                                <td><span class="badge text-bg-warning">Pending</span></td>
-                                                <td>Today, 08:02</td>
-                                            </tr>
-                                            <tr>
-                                                <td>#1001</td>
-                                                <td>Table 8</td>
-                                                <td>$23.60</td>
-                                                <td><span class="badge text-bg-success">Completed</span></td>
-                                                <td>Today, 07:40</td>
-                                            </tr>
-                                            <tr>
-                                                <td>#1000</td>
-                                                <td>Table 9</td>
-                                                <td>$41.00</td>
-                                                <td><span class="badge text-bg-primary">In Progress</span></td>
-                                                <td>Today, 07:18</td>
-                                            </tr>
-                                            <tr>
-                                                <td>#999</td>
-                                                <td>Table 10</td>
-                                                <td>$88.90</td>
-                                                <td><span class="badge text-bg-warning">Pending</span></td>
-                                                <td>Yesterday, 21:30</td>
-                                            </tr>
+                                            @foreach ($orders as $order)
+                                                <tr>
+                                                    <td>#{{ $order->order_number }}</td>
+                                                    <td>{{ $order->table->table_number }}</td>
+                                                    <td>${{ number_format($order->total_price, 2) }}</td>
+                                                    @if($order->status === 'pending')
+                                                        <td><span class="badge text-bg-danger">{{ $order->status }}</span></td>
+                                                    @elseif($order->status === 'completed')
+                                                        <td><span class="badge text-bg-success">{{ $order->status }}</span></td>
+                                                    @elseif($order->status === 'in preparation')
+                                                        <td><span class="badge text-bg-warning">{{ $order->status }}</span></td>
+                                                    @endif
+                                                    {{-- <td><span class="badge text-bg-warning">{{ $order->status }}</span>
+                                                    </td> --}}
+                                                    <td>{{ $order->created_at->format("Y,M,d") }}</td>
+                                                </tr>
+                                            @endforeach
+
                                         </tbody>
                                     </table>
+                                    <div class="d-flex justify-content-end mt-3">
+                                        {{ $orders->links() }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-lg-4">
+                    {{-- <div class="col-lg-4">
                         <div class="card mb-4">
                             <div class="card-header">
                                 <h3 class="card-title">Quick Links</h3>
@@ -214,10 +168,10 @@
                                     <a href="#" class="btn btn-primary" onclick="return false;">
                                         <i class="bi bi-people me-2"></i> Manage Users
                                     </a>
-                                    <a href="#" class="btn btn-success" onclick="return false;">
+                                    <a href="{{ route('menu') }}" class="btn btn-success">
                                         <i class="bi bi-card-list me-2"></i> Manage Menu
                                     </a>
-                                    <a href="#" class="btn btn-warning" onclick="return false;">
+                                    <a href="{{ route('table.index') }}" class="btn btn-warning">
                                         <i class="bi bi-layout-wtf me-2"></i> Manage Tables
                                     </a>
                                     <a href="#" class="btn btn-danger" onclick="return false;">
@@ -227,7 +181,7 @@
 
                             </div>
                         </div>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
         </div>

@@ -160,9 +160,6 @@
                 </div>
                 <input type="checkbox" name="remember"> Remember Me
                 <div class="rm-register-actions d-flex align-items-center justify-content-between mt-4 gap-2">
-                    <a href="{{ route('register') }}" class="btn btn-outline-light">
-                        <i class="bi bi-arrow-left-circle me-1"></i> Create Account
-                    </a>
 
                     <button type="submit" class="btn btn-primary px-4">
                         <i class="bi bi-box-arrow-in-right me-1"></i> Login

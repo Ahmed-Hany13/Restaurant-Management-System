@@ -16,7 +16,7 @@ class MenuItemController extends Controller
      */
     public function index()
     {
-        $items = MenuItem::with('menuSubcategory.menuCategory.menuSection')->get();
+        $items = MenuItem::with('menuSubcategory.menuCategory.menuSection', 'offers')->paginate(10);
         return view('admin.items.view-items', compact('items'));
     }
 
@@ -39,7 +39,6 @@ class MenuItemController extends Controller
 
         if ($request->hasFile('image')) {
             $file = $request->file('image');
-            // Ensure the directory exists
             $path = Storage::disk('public')->putFile('menu-items', $file);
             $validated['image'] = $path;
         }

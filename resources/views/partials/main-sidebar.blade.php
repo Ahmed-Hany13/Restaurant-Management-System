@@ -20,7 +20,6 @@
                     <!--begin::Sidebar Menu-->
                     <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu"
                         data-accordion="false">
-                        <li class="nav-item menu-open">
                         <li class="nav-header">General</li>
 
                         <li class="nav-item">
@@ -38,62 +37,6 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('orders_page') }}" class="nav-link">
-                                <i class="bi bi-receipt me-1"></i>
-                                <p>
-                                    Orders
-                                </p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('billing_page') }}" class="nav-link">
-                                <i class="bi bi-cash-coin me-1"></i>
-                                <p>
-                                    Billings
-                                </p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('kitchen') }}" class="nav-link">
-                                <i class="bi bi-fire me-1"></i>
-                                <p>
-                                    Kitchen View
-                                </p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('section.index') }}" class="nav-link">
-                                <i class="bi bi-collection"></i>
-                                <p>
-                                    Sections
-                                </p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('category.index') }}" class="nav-link">
-                                <i class="bi bi-grid"></i>
-                                <p>
-                                    Categories
-                                </p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('subcategory.index') }}" class="nav-link">
-                                <i class="bi bi-diagram-3"></i>
-                                <p>
-                                    SubCategories
-                                </p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('item.index') }}" class="nav-link">
-                                <i class="bi bi-bag"></i>
-                                <p>
-                                    Items
-                                </p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a href="{{ route('menu') }}" class="nav-link">
                                 <i class="bi bi-book-half me-1"></i>
                                 <p>
@@ -101,7 +44,92 @@
                                 </p>
                             </a>
                         </li>
-
+                        <li class="nav-item">
+                            <a href="{{ route('table.index') }}" class="nav-link">
+                                <i class="bi bi-table"></i>
+                                <p>
+                                    Tables
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('offers.index') }}" class="nav-link">
+                                <i class="bi bi-tag-fill"></i>
+                                <p>
+                                    Offers
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-item has-treeview">
+                            <a href="#" class="nav-link" data-lte-toggle="treeview">
+                                <i class="bi bi-fire"></i> 
+                                <p>
+                                    Kitchen & Orders
+                                    <i class="nav-arrow bi bi-chevron-right"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ route('orders.index') }}" class="nav-link">
+                                        <i class="bi bi-receipt me-1"></i>
+                                        <p>Orders</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('reservations.index') }}" class="nav-link">
+                                        <i class="bi bi-calendar-event me-1"></i>
+                                        <p>Reservations</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('billing_page') }}" class="nav-link">
+                                        <i class="bi bi-cash-coin me-1"></i>
+                                        <p>Billings</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('kitchen') }}" class="nav-link">
+                                        <i class="bi bi-fire me-1"></i>
+                                        <p>Kitchen View</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item has-treeview">
+                            <a href="#" class="nav-link" data-lte-toggle="treeview">
+                                <i class="bi bi-list-nested"></i>
+                                <p>
+                                    Menu Management
+                                    <i class="nav-arrow bi bi-chevron-right"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ route('section.index') }}" class="nav-link">
+                                        <i class="bi bi-collection"></i>
+                                        <p>Sections</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('category.index') }}" class="nav-link">
+                                        <i class="bi bi-grid"></i>
+                                        <p>Categories</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('subcategory.index') }}" class="nav-link">
+                                        <i class="bi bi-diagram-3"></i>
+                                        <p>SubCategories</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('item.index') }}" class="nav-link">
+                                        <i class="bi bi-bag"></i>
+                                        <p>Items</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
 
                     </ul>
                     <!--end::Sidebar Menu-->
@@ -110,4 +138,3 @@
             <!--end::Sidebar Wrapper-->
         </aside>
         <!--end::Sidebar-->
-        <!--begin::App Main-->
