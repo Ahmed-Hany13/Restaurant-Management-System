@@ -62,7 +62,7 @@
                         </li>
                         <li class="nav-item has-treeview">
                             <a href="#" class="nav-link" data-lte-toggle="treeview">
-                                <i class="bi bi-fire"></i> 
+                                <i class="bi bi-fire"></i>
                                 <p>
                                     Kitchen & Orders
                                     <i class="nav-arrow bi bi-chevron-right"></i>
@@ -81,12 +81,12 @@
                                         <p>Reservations</p>
                                     </a>
                                 </li>
-                                <li class="nav-item">
+                                {{-- <li class="nav-item">
                                     <a href="{{ route('billing_page') }}" class="nav-link">
                                         <i class="bi bi-cash-coin me-1"></i>
                                         <p>Billings</p>
                                     </a>
-                                </li>
+                                </li> --}}
                                 <li class="nav-item">
                                     <a href="{{ route('kitchen') }}" class="nav-link">
                                         <i class="bi bi-fire me-1"></i>
